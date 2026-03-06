@@ -27,6 +27,7 @@
             --color-orange-400: #E68161;
             --color-orange-500: #A84B2F;
             --color-purple: #9333EA;
+            --color-green-500: #22C55E;
             --color-brown-600-rgb: 94,82,64;
             --color-teal-500-rgb: 33,128,141;
             --color-slate-900-rgb: 19,52,59;
@@ -47,12 +48,13 @@
             --color-btn-primary-text: var(--color-cream-50);
             --color-card-border: rgba(var(--color-brown-600-rgb),0.12);
             --color-error: var(--color-red-500);
-            --color-success: var(--color-teal-500);
+            --color-success: var(--color-green-500);
+            --color-warning: var(--color-orange-500);
             --color-focus-ring: rgba(var(--color-teal-500-rgb),0.4);
             --focus-outline: 2px solid var(--color-primary);
             --status-bg-opacity: 0.15;
             --status-border-opacity: 0.25;
-            --color-success-rgb: 33,128,141;
+            --color-success-rgb: 34,197,94;
             --color-error-rgb: 192,21,47;
             --color-info-rgb: 98,108,113;
             --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -142,6 +144,8 @@
         .badge-closed { background: var(--color-secondary); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
         .profit { color: var(--color-success); font-weight: var(--font-weight-semibold); }
         .loss { color: var(--color-error); font-weight: var(--font-weight-semibold); }
+        .duration-day { background: rgba(var(--color-orange-500-rgb),0.1); color: var(--color-orange-500); border: 1px solid rgba(var(--color-orange-500-rgb),0.25); }
+        .duration-swing { background: rgba(var(--color-success-rgb),0.1); color: var(--color-success); border: 1px solid rgba(var(--color-success-rgb),0.25); }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-16); }
         .stat-card { background: var(--color-surface); border: 1px solid var(--color-card-border); border-radius: var(--radius-lg); padding: var(--space-20); text-align: center; }
         .stat-label { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-bottom: var(--space-8); }
@@ -154,7 +158,14 @@
         .toast.show { opacity: 1; }
         #import-input { display: none; }
         .edit-indicator { font-size: var(--font-size-sm); color: var(--color-info); font-weight: var(--font-weight-medium); }
-        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; } .stats-grid { grid-template-columns: 1fr 1fr; } .trades-table { font-size: var(--font-size-xs); } .trades-table th, .trades-table td { padding: var(--space-8); } }
+        .trade-detail { max-width: 500px; margin: 20px auto; background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-24); box-shadow: var(--shadow-md); font-family: var(--font-family-base); }
+        .trade-detail h2 { margin-bottom: var(--space-16); color: var(--color-primary); }
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: var(--space-8); padding: var(--space-8) 0; border-bottom: 1px solid var(--color-border); }
+        .detail-label { font-weight: var(--font-weight-medium); color: var(--color-text-secondary); }
+        .detail-value { font-weight: var(--font-weight-semibold); }
+        .detail-profit { color: var(--color-success); }
+        .detail-loss { color: var(--color-error); }
+        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; } .stats-grid { grid-column: 1fr 1fr; } .trades-table { font-size: var(--font-size-xs); } .trades-table th, .trades-table td { padding: var(--space-8); } }
         @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } .action-buttons { flex-direction: column; width: 100%; } }
     </style>
 </head>
@@ -356,21 +367,15 @@ function updateDeltaPlaceholder() {
 }
 
 function switchTab(tabName) {
-    // Remove active from all tabs and contents
-    var tabs = document.querySelectorAll('.tab');
-    var contents = document.querySelectorAll('.tab-content');
-    for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
-    for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
+    document.querySelectorAll('.tab').forEach(function(tab) { tab.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(content) { content.classList.remove('active'); });
 
-    // Activate selected tab and content
     document.getElementById('tab-' + tabName).classList.add('active');
     document.getElementById(tabName).classList.add('active');
 
-    // Render content if needed
     if (tabName === 'trades') renderTrades();
-    else if (tabName === 'analytics') renderAnalytics();
+    if (tabName === 'analytics') renderAnalytics();
 
-    // Cancel editing if switching tabs
     if (editingId !== null) cancelEdit();
 }
 
@@ -407,7 +412,6 @@ document.getElementById('tradeForm').addEventListener('submit', function(e) {
     };
 
     if (editingId !== null) {
-        // Update existing trade
         for (var i = 0; i < trades.length; i++) {
             if (trades[i].id === editingId) {
                 trades[i] = trade;
@@ -416,7 +420,6 @@ document.getElementById('tradeForm').addEventListener('submit', function(e) {
         }
         showToast('Trade updated!');
     } else {
-        // Add new trade
         trades.push(trade);
         showToast('Trade saved!');
     }
@@ -428,8 +431,25 @@ document.getElementById('tradeForm').addEventListener('submit', function(e) {
 
 function calculatePnL(trade) {
     if (!trade.exitPrice) return null;
-    var profit = (trade.exitPrice - trade.entryPrice) * trade.contracts * 100;
-    return profit - trade.fees;
+    return (trade.exitPrice - trade.entryPrice) * trade.contracts * 100 - trade.fees;
+}
+
+function calculateDuration(entryDate, exitDate) {
+    if (!exitDate) return 'Open';
+    var entry = new Date(entryDate);
+    var exit = new Date(exitDate);
+    var days = Math.floor((exit - entry) / (1000 * 60 * 60 * 24));
+    return days <= 1 ? 'Day' : days + 'd Swing';
+}
+
+function getFilteredTrades() {
+    var statusFilter = document.getElementById('filter-status').value;
+    var typeFilter = document.getElementById('filter-type').value;
+    return trades.filter(function(trade) {
+        if (statusFilter !== 'all' && trade.status !== statusFilter) return false;
+        if (typeFilter !== 'all' && trade.optionType !== typeFilter) return false;
+        return true;
+    });
 }
 
 function renderTrades() {
@@ -438,23 +458,25 @@ function renderTrades() {
         container.innerHTML = '<div class="empty-state">No trades logged yet. Start by logging your first trade!</div>';
         return;
     }
-    var filteredTrades = getFilteredTrades();
-    if (filteredTrades.length === 0) {
+    var filtered = getFilteredTrades();
+    if (filtered.length === 0) {
         container.innerHTML = '<div class="empty-state">No trades match the selected filters.</div>';
         return;
     }
 
     var html = '<table class="trades-table"><thead><tr>' +
-        '<th>Date</th><th>Ticker</th><th>Type</th><th>Strike</th><th>Exp.</th>' +
-        '<th>Qty</th><th>Stock $</th><th>Entry</th><th>Exit</th>' +
-        '<th>Delta</th><th>Theta</th><th>Stop</th><th>P&L</th><th>Status</th><th>Actions</th>' +
+        '<th>Date</th><th>Ticker</th><th>Type</th><th>Strike</th><th>Exp</th>' +
+        '<th>Qty</th><th>Stock</th><th>Entry</th><th>Exit</th><th>Delta</th>' +
+        '<th>Theta</th><th>Stop</th><th>P&L</th><th>Duration</th><th>Status</th><th>Actions</th>' +
         '</tr></thead><tbody>';
 
-    for (var i = 0; i < filteredTrades.length; i++) {
-        var trade = filteredTrades[i];
+    for (var i = 0; i < filtered.length; i++) {
+        var trade = filtered[i];
         var pnl = calculatePnL(trade);
         var pnlClass = pnl !== null ? (pnl > 0 ? 'profit' : 'loss') : '';
         var pnlText = pnl !== null ? '$' + pnl.toFixed(2) : '-';
+        var duration = calculateDuration(trade.entryDate, trade.exitDate);
+        var durationClass = duration === 'Open' ? 'badge-open' : (duration.includes('Day') ? 'duration-day' : 'duration-swing');
 
         html += '<tr>' +
             '<td>' + trade.entryDate + '</td>' +
@@ -470,26 +492,17 @@ function renderTrades() {
             '<td>' + (trade.theta !== null ? trade.theta : '-') + '</td>' +
             '<td>' + (trade.stopLoss ? '$' + trade.stopLoss.toFixed(2) : '-') + '</td>' +
             '<td class="' + pnlClass + '">' + pnlText + '</td>' +
+            '<td><span class="badge ' + durationClass + '">' + duration + '</span></td>' +
             '<td><span class="badge badge-' + trade.status + '">' + (trade.status === 'open' ? 'Open' : 'Closed') + '</span></td>' +
             '<td><div class="action-buttons">' +
                 '<button class="btn btn-secondary btn-small" onclick="editTrade(' + trade.id + ')">Edit</button>' +
-                '<button class="btn btn-secondary btn-small" onclick="viewDetails(' + trade.id + ')">View</button>' +
+                '<button class="btn btn-secondary btn-small" onclick="viewDetails(' + trade.id + ')">Details</button>' +
                 '<button class="btn btn-secondary btn-small" onclick="deleteTrade(' + trade.id + ')">Delete</button>' +
             '</div></td>' +
         '</tr>';
     }
     html += '</tbody></table>';
     container.innerHTML = html;
-}
-
-function getFilteredTrades() {
-    var statusFilter = document.getElementById('filter-status').value;
-    var typeFilter = document.getElementById('filter-type').value;
-    return trades.filter(function(trade) {
-        if (statusFilter !== 'all' && trade.status !== statusFilter) return false;
-        if (typeFilter !== 'all' && trade.optionType !== typeFilter) return false;
-        return true;
-    });
 }
 
 function filterTrades() {
@@ -530,8 +543,36 @@ function viewDetails(id) {
     var trade = trades.find(function(t) { return t.id === id; });
     if (!trade) return;
     var pnl = calculatePnL(trade);
-    var msg = 'TRADE DETAILS\n\nTicker: ' + trade.ticker + '\nType: ' + (trade.optionType === 'call' ? 'Long Call' : 'Long Put') + '\nID: ' + trade.id + '\nStrike: $' + trade.strike.toFixed(2) + '\nExpiration: ' + trade.expiry + '\nContracts: ' + trade.contracts + '\n\nStock Price Entry: ' + (trade.stockPriceEntry ? '$' + trade.stockPriceEntry.toFixed(2) : 'N/A') + '\nOption Entry: $' + trade.entryPrice.toFixed(2) + ' (' + trade.entryDate + ')\nOption Exit: ' + (trade.exitPrice ? '$' + trade.exitPrice.toFixed(2) + ' (' + trade.exitDate + ')' : 'N/A') + '\nCommissions: $' + trade.fees.toFixed(2) + '\nP&L: ' + (pnl !== null ? '$' + pnl.toFixed(2) : 'N/A') + '\n\nDelta: ' + (trade.delta !== null ? trade.delta : 'N/A') + '\nTheta: ' + (trade.theta !== null ? trade.theta : 'N/A') + '\nStop Loss: ' + (trade.stopLoss ? '$' + trade.stopLoss.toFixed(2) : 'N/A') + '\n\nStatus: ' + (trade.status === 'open' ? 'Open' : 'Closed') + '\n\nThesis: ' + (trade.thesis || 'N/A') + '\n\nNotes: ' + (trade.notes || 'N/A');
-    alert(msg);
+    var pnlClass = pnl !== null ? (pnl > 0 ? 'detail-profit' : 'detail-loss') : '';
+    var pnlText = pnl !== null ? '$' + pnl.toFixed(2) : 'N/A';
+    var duration = calculateDuration(trade.entryDate, trade.exitDate);
+    var durationClass = duration === 'Open' ? 'badge-open' : (duration.includes('Day') ? 'duration-day' : 'duration-swing');
+
+    var details = '<div class="trade-detail">' +
+        '<h2>📊 Trade Details <span style="font-size:0.8em;color:var(--color-text-secondary)">ID: ' + trade.id + '</span></h2>' +
+        '<div class="detail-row"><span class="detail-label">Ticker:</span><span class="detail-value"><strong>' + trade.ticker + '</strong></span></div>' +
+        '<div class="detail-row"><span class="detail-label">Type:</span><span class="detail-value"><span class="badge badge-' + trade.optionType + '">' + (trade.optionType === 'call' ? 'Long Call' : 'Long Put') + '</span></span></div>' +
+        '<div class="detail-row"><span class="detail-label">Strike:</span><span class="detail-value">$' + trade.strike.toFixed(2) + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Expiration:</span><span class="detail-value">' + trade.expiry + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Contracts:</span><span class="detail-value">' + trade.contracts + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Entry:</span><span class="detail-value">$' + trade.entryPrice.toFixed(2) + ' (' + trade.entryDate + ')</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Stock Entry:</span><span class="detail-value">$' + (trade.stockPriceEntry ? trade.stockPriceEntry.toFixed(2) : 'N/A') + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Exit:</span><span class="detail-value">' + (trade.exitPrice ? '$' + trade.exitPrice.toFixed(2) + ' (' + trade.exitDate + ')' : 'Open') + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">P&L:</span><span class="detail-value ' + pnlClass + '">' + pnlText + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Duration:</span><span class="detail-value"><span class="badge ' + durationClass + '">' + duration + '</span></span></div>' +
+        '<div class="detail-row"><span class="detail-label">Delta:</span><span class="detail-value">' + (trade.delta !== null ? trade.delta : 'N/A') + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Theta:</span><span class="detail-value">' + (trade.theta !== null ? trade.theta : 'N/A') + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Stop Loss:</span><span class="detail-value">' + (trade.stopLoss ? '$' + trade.stopLoss.toFixed(2) : 'N/A') + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Status:</span><span class="detail-value"><span class="badge badge-' + trade.status + '">' + (trade.status === 'open' ? 'Open' : 'Closed') + '</span></span></div>' +
+        '<hr style="margin: var(--space-16) 0;">' +
+        '<div style="margin-top: var(--space-16);"><strong>Thesis:</strong><div style="margin-top:var(--space-8);padding:var(--space-12);background:var(--color-secondary);border-radius:var(--radius-base);">' + (trade.thesis || 'N/A') + '</div></div>' +
+        '<div style="margin-top: var(--space-16);"><strong>Notes:</strong><div style="margin-top:var(--space-8);padding:var(--space-12);background:var(--color-secondary);border-radius:var(--radius-base);">' + (trade.notes || 'N/A') + '</div></div>' +
+        '</div>';
+
+    var modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+    modal.innerHTML = details + '<button onclick="this.parentElement.remove()" style="margin-top:var(--space-16);padding:var(--space-12) var(--space-24);background:var(--color-primary);color:var(--color-btn-primary-text);border:none;border-radius:var(--radius-base);font-size:var(--font-size-lg);cursor:pointer;">Close</button>';
+    document.body.appendChild(modal);
 }
 
 function deleteTrade(id) {
@@ -551,18 +592,16 @@ function importCSV(event) {
     reader.onload = function(e) {
         var csv = e.target.result;
         var lines = csv.split('\n');
-        if (lines.length < 2) { showToast('Invalid CSV file'); return; }
+        if (lines.length < 2) { showToast('Invalid CSV'); return; }
 
         var header = lines[0].split(',');
-        var importedTrades = [];
-        var errors = 0;
+        var imported = 0, updated = 0, errors = 0;
 
         for (var i = 1; i < lines.length; i++) {
             var line = lines[i].trim();
             if (!line) continue;
 
-            // Simple CSV parser
-            var row = line.split(',');
+            var row = parseCSVLine(line);
             if (row.length < 18) { errors++; continue; }
 
             var trade = {
@@ -585,54 +624,65 @@ function importCSV(event) {
                 notes: row[17].trim()
             };
 
-            importedTrades.push(trade);
-        }
-
-        // Merge: update existing, add new
-        for (var k = 0; k < importedTrades.length; k++) {
             var found = false;
-            for (var m = 0; m < trades.length; m++) {
-                if (trades[m].id === importedTrades[k].id) {
-                    trades[m] = importedTrades[k];
+            for (var j = 0; j < trades.length; j++) {
+                if (trades[j].id === trade.id) {
+                    trades[j] = trade;
+                    updated++;
                     found = true;
                     break;
                 }
             }
             if (!found) {
-                trades.push(importedTrades[k]);
+                trades.push(trade);
+                imported++;
             }
         }
 
         saveTrades();
         renderTrades();
         event.target.value = '';
-        showToast('Imported ' + importedTrades.length + ' trades (merged)');
+        showToast('Imported: ' + imported + ' new, Updated: ' + updated + ', Errors: ' + errors);
     };
     reader.readAsText(file);
+}
+
+function parseCSVLine(line) {
+    var result = [];
+    var inQuotes = false;
+    var field = '';
+    for (var i = 0; i < line.length; i++) {
+        var char = line[i];
+        if (char === '"' && (i === 0 || line[i-1] !== '""')) {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(field);
+            field = '';
+        } else {
+            field += char;
+        }
+    }
+    result.push(field);
+    return result;
 }
 
 function exportTrades() {
     if (trades.length === 0) { showToast('No trades to export.'); return; }
     var csv = 'ID,Entry Date,Ticker,Type,Strike,Expiration,Contracts,Stock Price Entry,Option Entry,Option Exit,Exit Date,Commissions,PnL,Delta,Theta,Stop Loss,Status,"Thesis","Notes"\n';
     for (var i = 0; i < trades.length; i++) {
-        var t = trades[i];
-        var pnl = calculatePnL(t);
-        var thesis = (t.thesis || '').replace(/"/g, '""');
-        var notes = (t.notes || '').replace(/"/g, '""');
-        csv += t.id + ',' + [
-            t.entryDate, t.ticker,
-            t.optionType === 'call' ? 'Long Call' : 'Long Put',
-            t.strike, t.expiry, t.contracts,
-            t.stockPriceEntry || '',
-            t.entryPrice, t.exitPrice || '',
-            t.exitDate || '', t.fees,
-            pnl !== null ? pnl.toFixed(2) : '',
-            t.delta !== null ? t.delta : '',
-            t.theta !== null ? t.theta : '',
-            t.stopLoss || '', t.status,
-            '"' + thesis + '"',
-            '"' + notes + '"'
-        ].join(',') + '\n';
+        var trade = trades[i];
+        var pnl = calculatePnL(trade);
+        var thesis = (trade.thesis || '').replace(/"/g, '""');
+        var notes = (trade.notes || '').replace(/"/g, '""');
+        csv += trade.id + ',' + trade.entryDate + ',' + trade.ticker + ',' +
+            (trade.optionType === 'call' ? 'Long Call' : 'Long Put') + ',' +
+            trade.strike + ',' + trade.expiry + ',' + trade.contracts + ',' +
+            (trade.stockPriceEntry || '') + ',' + trade.entryPrice + ',' +
+            (trade.exitPrice || '') + ',' + (trade.exitDate || '') + ',' +
+            trade.fees + ',' + (pnl !== null ? pnl.toFixed(2) : '') + ',' +
+            (trade.delta !== null ? trade.delta : '') + ',' +
+            (trade.theta !== null ? trade.theta : '') + ',' +
+            (trade.stopLoss || '') + ',' + trade.status + ',"' + thesis + '","' + notes + '"\n';
     }
     var blob = new Blob([csv], { type: 'text/csv' });
     var url = window.URL.createObjectURL(blob);
@@ -643,46 +693,7 @@ function exportTrades() {
     window.URL.revokeObjectURL(url);
 }
 
-function renderAnalytics() {
-    var container = document.getElementById('stats-grid');
-    if (trades.length === 0) {
-        container.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No data yet. Log some trades first!</div>';
-        return;
-    }
-    var closed = trades.filter(function(t) { return t.status === 'closed' && t.exitPrice; });
-    var open = trades.filter(function(t) { return t.status === 'open'; }).length;
-    var calls = trades.filter(function(t) { return t.optionType === 'call'; }).length;
-    var puts = trades.filter(function(t) { return t.optionType === 'put'; }).length;
-    var totalPnL = 0, winners = 0, losers = 0, totalWin = 0, totalLoss = 0;
-    for (var i = 0; i < closed.length; i++) {
-        var pnl = calculatePnL(closed[i]);
-        if (pnl !== null) {
-            totalPnL += pnl;
-            if (pnl > 0) { winners++; totalWin += pnl; }
-            else if (pnl < 0) { losers++; totalLoss += Math.abs(pnl); }
-        }
-    }
-    var winRate = closed.length > 0 ? ((winners / closed.length) * 100).toFixed(1) : '0.0';
-    var avgWin = winners > 0 ? (totalWin / winners).toFixed(2) : '0.00';
-    var avgLoss = losers > 0 ? (totalLoss / losers).toFixed(2) : '0.00';
-    var pf = totalLoss > 0 ? (totalWin / totalLoss).toFixed(2) : '-';
-    var pnlClass = totalPnL > 0 ? 'profit' : (totalPnL < 0 ? 'loss' : '');
-
-    container.innerHTML = 
-        '<div class="stat-card"><div class="stat-label">Total Trades</div><div class="stat-value">' + trades.length + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Open</div><div class="stat-value">' + open + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Closed</div><div class="stat-value">' + closed.length + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">P&L</div><div class="stat-value ' + pnlClass + '">$' + totalPnL.toFixed(2) + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value">' + winRate + '%</div></div>' +
-        '<div class="stat-card"><div class="stat-label">W/L</div><div class="stat-value">' + winners + '/' + losers + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Avg Win</div><div class="stat-value profit">$' + avgWin + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Avg Loss</div><div class="stat-value loss">$' + avgLoss + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Profit Factor</div><div class="stat-value">' + pf + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Long Calls</div><div class="stat-value">' + calls + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Long Puts</div><div class="stat-value">' + puts + '</div></div>';
-}
-
-// Initialize
+// Initialize app
 loadTrades();
 document.getElementById('entry-date').valueAsDate = new Date();
 updateDeltaPlaceholder();
