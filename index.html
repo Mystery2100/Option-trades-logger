@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyStery Analytics</title>
     <style>
+        /* Tu CSS actual completo - el mismo que tienes funcionando */
         :root {
             --color-cream-50: rgba(252,252,249,1);
             --color-cream-100: rgba(255,255,253,1);
@@ -56,11 +58,25 @@
             --color-error-rgb: 192,21,47;
             --color-info-rgb: 98,108,113;
             --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --font-size-xs: 11px; --font-size-sm: 12px; --font-size-base: 14px;
-            --font-size-lg: 16px; --font-size-xl: 18px; --font-size-2xl: 20px; --font-size-3xl: 24px;
-            --font-weight-normal: 400; --font-weight-medium: 500; --font-weight-semibold: 550; --font-weight-bold: 600;
-            --space-4: 4px; --space-8: 8px; --space-12: 12px; --space-16: 16px; --space-20: 20px; --space-24: 24px;
-            --radius-base: 8px; --radius-lg: 12px;
+            --font-size-xs: 11px;
+            --font-size-sm: 12px;
+            --font-size-base: 14px;
+            --font-size-lg: 16px;
+            --font-size-xl: 18px;
+            --font-size-2xl: 20px;
+            --font-size-3xl: 24px;
+            --font-weight-normal: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 550;
+            --font-weight-bold: 600;
+            --space-4: 4px;
+            --space-8: 8px;
+            --space-12: 12px;
+            --space-16: 16px;
+            --space-20: 20px;
+            --space-24: 24px;
+            --radius-base: 8px;
+            --radius-lg: 12px;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
         }
         @media (prefers-color-scheme: dark) {
@@ -138,6 +154,7 @@
         .filter-bar select { min-width: 140px; }
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2121; color: #fff; padding: 12px 24px; border-radius: var(--radius-lg); font-size: var(--font-size-sm); z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
+        #import-input { display: none; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; } .stats-grid { grid-template-columns: 1fr 1fr; } .trades-table { font-size: var(--font-size-xs); } .trades-table th, .trades-table td { padding: var(--space-8); } }
         @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
     </style>
@@ -157,7 +174,7 @@
 
     <div id="new-trade" class="tab-content active">
         <div class="card">
-            <h2 style="margin-bottom:var(--space-20);font-size:var(--font-size-xl);">Log New Trade</h2>
+            <h2 style="margin-bottom:var(--space-20);font-size:var(--font-size-xl);">Log New Trade <span id="edit-indicator" style="font-size:var(--font-size-sm);color:var(--color-info);font-weight:var(--font-weight-medium)"></span></h2>
             <form id="tradeForm">
                 <p class="section-label">Trade Setup</p>
                 <div class="form-grid">
@@ -167,7 +184,7 @@
                     </div>
                     <div class="form-group">
                         <label for="option-type">Option Type *</label>
-                        <select id="option-type" required>
+                        <select id="option-type" required onchange="updateDeltaPlaceholder()">
                             <option value="">Select...</option>
                             <option value="call">Long Call</option>
                             <option value="put">Long Put</option>
@@ -219,8 +236,8 @@
                 <p class="section-label">Greeks at Entry</p>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="delta">Delta <span class="label-hint">(0 to 1)</span></label>
-                        <input type="number" id="delta" step="0.01" min="0" max="1" placeholder="0.45">
+                        <label for="delta">Delta <span class="label-hint">(negative OK for puts)</span></label>
+                        <input type="number" id="delta" step="0.01" placeholder="-0.45">
                     </div>
                     <div class="form-group">
                         <label for="theta">Theta <span class="label-hint">(daily decay $)</span></label>
@@ -260,16 +277,24 @@
                     <label for="notes">Notes / Lessons Learned</label>
                     <textarea id="notes" placeholder="Additional notes, emotions, key learnings after closing..."></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary" style="margin-top:var(--space-20);">Save Trade</button>
+
+                <div style="display:flex;gap:var(--space-8);margin-top:var(--space-20)">
+                    <button type="submit" class="btn btn-primary" id="save-btn">Save Trade</button>
+                    <button type="button" class="btn btn-secondary" onclick="cancelEdit()">Cancel Edit</button>
+                </div>
             </form>
         </div>
     </div>
 
     <div id="trades" class="tab-content">
         <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-20);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-20)">
                 <h2 style="font-size:var(--font-size-xl);">Trade History</h2>
-                <button class="btn btn-secondary btn-small" onclick="exportTrades()">Export CSV</button>
+                <div style="display:flex;gap:var(--space-8)">
+                    <button class="btn btn-secondary btn-small" onclick="exportTrades()">Export CSV</button>
+                    <input type="file" id="import-input" accept=".csv" style="display:none" onchange="importCSV(event)">
+                    <button class="btn btn-secondary btn-small" onclick="document.getElementById('import-input').click()">Import CSV</button>
+                </div>
             </div>
             <div class="filter-bar">
                 <select id="filter-status" onchange="filterTrades()">
@@ -278,7 +303,7 @@
                     <option value="closed">Closed</option>
                 </select>
                 <select id="filter-type" onchange="filterTrades()">
-                    <option value="all">Calls &amp; Puts</option>
+                    <option value="all">Calls & Puts</option>
                     <option value="call">Long Calls only</option>
                     <option value="put">Long Puts only</option>
                 </select>
@@ -299,6 +324,7 @@
 
 <script>
 var trades = [];
+var editingId = null;
 
 function showToast(msg) {
     var t = document.getElementById('toast');
@@ -318,6 +344,18 @@ function saveTrades() {
     localStorage.setItem('mystery_trades', JSON.stringify(trades));
 }
 
+function updateDeltaPlaceholder() {
+    var type = document.getElementById('option-type').value;
+    var deltaInput = document.getElementById('delta');
+    if (type === 'call') {
+        deltaInput.placeholder = '0.45';
+    } else if (type === 'put') {
+        deltaInput.placeholder = '-0.45';
+    } else {
+        deltaInput.placeholder = 'Delta';
+    }
+}
+
 function switchTab(tabName) {
     var allTabs = document.querySelectorAll('.tab');
     var allContents = document.querySelectorAll('.tab-content');
@@ -327,12 +365,21 @@ function switchTab(tabName) {
     document.getElementById(tabName).classList.add('active');
     if (tabName === 'trades') renderTrades();
     else if (tabName === 'analytics') renderAnalytics();
+    if (editingId !== null) cancelEdit();
+}
+
+function cancelEdit() {
+    editingId = null;
+    document.getElementById('edit-indicator').textContent = '';
+    document.getElementById('save-btn').textContent = 'Save Trade';
+    document.getElementById('tradeForm').reset();
+    document.getElementById('entry-date').valueAsDate = new Date();
 }
 
 document.getElementById('tradeForm').addEventListener('submit', function(e) {
     e.preventDefault();
     var trade = {
-        id: Date.now(),
+        id: editingId || Date.now(),
         ticker: document.getElementById('ticker').value.toUpperCase(),
         optionType: document.getElementById('option-type').value,
         strike: parseFloat(document.getElementById('strike').value),
@@ -351,11 +398,25 @@ document.getElementById('tradeForm').addEventListener('submit', function(e) {
         thesis: document.getElementById('thesis').value,
         notes: document.getElementById('notes').value
     };
-    trades.push(trade);
+
+    if (editingId !== null) {
+        // Update existing trade
+        for (var i = 0; i < trades.length; i++) {
+            if (trades[i].id === editingId) {
+                trades[i] = trade;
+                break;
+            }
+        }
+        showToast('Trade updated successfully!');
+    } else {
+        // Add new trade
+        trades.push(trade);
+        showToast('Trade saved successfully!');
+    }
+
     saveTrades();
-    this.reset();
-    document.getElementById('entry-date').valueAsDate = new Date();
-    showToast('Trade saved successfully!');
+    cancelEdit();
+    if (document.getElementById('trades').classList.contains('active')) renderTrades();
 });
 
 function calculatePnL(trade) {
@@ -409,6 +470,7 @@ function renderTrades() {
             '<td class="' + pnlClass + '">' + pnlText + '</td>' +
             '<td><span class="badge badge-' + tr.status + '">' + (tr.status === 'open' ? 'Open' : 'Closed') + '</span></td>' +
             '<td><div class="action-buttons">' +
+                '<button class="btn btn-secondary btn-small" onclick="editTrade(' + tr.id + ')">Edit</button>' +
                 '<button class="btn btn-secondary btn-small" onclick="viewDetails(' + tr.id + ')">View</button>' +
                 '<button class="btn btn-secondary btn-small" onclick="deleteTrade(' + tr.id + ')">Delete</button>' +
             '</div></td>' +
@@ -419,6 +481,195 @@ function renderTrades() {
         '<th>Qty</th><th>Stock $</th><th>Entry</th><th>Exit</th>' +
         '<th>Delta</th><th>Theta</th><th>Stop</th><th>P&L</th><th>Status</th><th>Actions</th>' +
         '</tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function editTrade(id) {
+    var trade = null;
+    for (var i = 0; i < trades.length; i++) {
+        if (trades[i].id === id) {
+            trade = trades[i];
+            break;
+        }
+    }
+    if (!trade) return;
+
+    editingId = id;
+    document.getElementById('edit-indicator').textContent = '(Editing Trade ID: ' + id + ')';
+    document.getElementById('save-btn').textContent = 'Update Trade';
+
+    document.getElementById('ticker').value = trade.ticker;
+    document.getElementById('option-type').value = trade.optionType;
+    document.getElementById('strike').value = trade.strike;
+    document.getElementById('expiry').value = trade.expiry;
+    document.getElementById('contracts').value = trade.contracts;
+    document.getElementById('status').value = trade.status;
+    document.getElementById('entry-date').value = trade.entryDate;
+    document.getElementById('entry-price').value = trade.entryPrice;
+    document.getElementById('stock-price-entry').value = trade.stockPriceEntry || '';
+    document.getElementById('fees').value = trade.fees || 0;
+    document.getElementById('delta').value = trade.delta !== null ? trade.delta : '';
+    document.getElementById('theta').value = trade.theta !== null ? trade.theta : '';
+    document.getElementById('stop-loss').value = trade.stopLoss !== null ? trade.stopLoss : '';
+    document.getElementById('exit-price').value = trade.exitPrice !== null ? trade.exitPrice : '';
+    document.getElementById('exit-date').value = trade.exitDate || '';
+    document.getElementById('thesis').value = trade.thesis || '';
+    document.getElementById('notes').value = trade.notes || '';
+
+    updateDeltaPlaceholder();
+    switchTab('new-trade');
+}
+
+function viewDetails(id) {
+    var trade = null;
+    for (var i = 0; i < trades.length; i++) {
+        if (trades[i].id === id) {
+            trade = trades[i];
+            break;
+        }
+    }
+    if (!trade) return;
+    var pnl = calculatePnL(trade);
+    var msg = 'TRADE DETAILS\n\n' +
+        'Ticker: ' + trade.ticker + '\n' +
+        'Type: ' + (trade.optionType === 'call' ? 'Long Call' : 'Long Put') + '\n' +
+        'ID: ' + trade.id + '\n' +
+        'Strike: $' + trade.strike.toFixed(2) + '\n' +
+        'Expiration: ' + trade.expiry + '\n' +
+        'Contracts: ' + trade.contracts + '\n\n' +
+        'Stock Price (Entry): ' + (trade.stockPriceEntry ? '$' + trade.stockPriceEntry.toFixed(2) : 'N/A') + '\n' +
+        'Option Entry: $' + trade.entryPrice.toFixed(2) + ' on ' + trade.entryDate + '\n' +
+        'Option Exit: ' + (trade.exitPrice ? '$' + trade.exitPrice.toFixed(2) + ' on ' + trade.exitDate : 'N/A') + '\n' +
+        'Commissions: $' + trade.fees.toFixed(2) + '\n' +
+        'P&L: ' + (pnl !== null ? '$' + pnl.toFixed(2) : 'N/A') + '\n\n' +
+        'Delta: ' + (trade.delta !== null ? trade.delta : 'N/A') + '\n' +
+        'Theta: ' + (trade.theta !== null ? trade.theta : 'N/A') + '\n' +
+        'Stop Loss: ' + (trade.stopLoss ? '$' + trade.stopLoss.toFixed(2) : 'N/A') + '\n\n' +
+        'Status: ' + (trade.status === 'open' ? 'Open' : 'Closed') + '\n\n' +
+        'Thesis:\n' + (trade.thesis || 'N/A') + '\n\n' +
+        'Notes:\n' + (trade.notes || 'N/A');
+    alert(msg);
+}
+
+function deleteTrade(id) {
+    if (confirm('Are you sure you want to delete this trade?')) {
+        trades = trades.filter(function(t) { return t.id !== id; });
+        saveTrades();
+        renderTrades();
+        showToast('Trade deleted.');
+    }
+}
+
+function importCSV(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var csv = e.target.result;
+        var lines = csv.split('\n');
+        var header = lines[0].trim().split(',');
+        var importedTrades = [];
+
+        for (var i = 1; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line) continue;
+
+            var row = [];
+            var inQuotes = false;
+            var field = '';
+            for (var j = 0; j < line.length; j++) {
+                var char = line[j];
+                if (char === '"' && (j === 0 || line[j-1] !== '""')) {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    row.push(field.trim());
+                    field = '';
+                } else {
+                    field += char;
+                }
+            }
+            row.push(field.trim());
+
+            if (row.length < header.length) continue;
+
+            var trade = {
+                id: Date.now() + i,  # ID temporal si no hay en CSV
+                ticker: row[1] || '',
+                optionType: row[2].toLowerCase().includes('call') ? 'call' : 'put',
+                strike: parseFloat(row[3]) || 0,
+                expiry: row[4] || '',
+                contracts: parseInt(row[5]) || 1,
+                stockPriceEntry: parseFloat(row[6]) || null,
+                entryPrice: parseFloat(row[7]) || 0,
+                exitPrice: parseFloat(row[8]) || null,
+                exitDate: row[9] || null,
+                fees: parseFloat(row[10]) || 0,
+                delta: parseFloat(row[12]) || null,
+                theta: parseFloat(row[13]) || null,
+                stopLoss: parseFloat(row[14]) || null,
+                status: row[15] || 'open',
+                thesis: row[16] || '',
+                notes: row[17] || ''
+            };
+
+            importedTrades.push(trade);
+        }
+
+        # Merge logic: update existing, add new
+        for (var k = 0; k < importedTrades.length; k++) {
+            var found = false;
+            for (var m = 0; m < trades.length; m++) {
+                if (trades[m].ticker === importedTrades[k].ticker && 
+                    trades[m].entryDate === importedTrades[k].entryDate) {
+                    trades[m] = importedTrades[k];
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                trades.push(importedTrades[k]);
+            }
+        }
+
+        saveTrades();
+        renderTrades();
+        event.target.value = '';
+        showToast('Imported ' + importedTrades.length + ' trades (merged with existing)');
+    };
+    reader.readAsText(file);
+}
+
+function exportTrades() {
+    if (trades.length === 0) { showToast('No trades to export.'); return; }
+    var csv = 'ID,Entry Date,Ticker,Type,Strike,Expiration,Contracts,Stock Price Entry,Option Entry,Option Exit,Exit Date,Commissions,PnL,Delta,Theta,Stop Loss,Status,Thesis,Notes\n';
+    for (var i = 0; i < trades.length; i++) {
+        var t = trades[i];
+        var pnl = calculatePnL(t);
+        var thesis = (t.thesis || '').replace(/"/g, '""');
+        var notes = (t.notes || '').replace(/"/g, '""');
+        csv += [
+            t.id,
+            t.entryDate, t.ticker,
+            t.optionType === 'call' ? 'Long Call' : 'Long Put',
+            t.strike, t.expiry, t.contracts,
+            t.stockPriceEntry || '',
+            t.entryPrice, t.exitPrice || '',
+            t.exitDate || '', t.fees,
+            pnl !== null ? pnl.toFixed(2) : '',
+            t.delta !== null ? t.delta : '',
+            t.theta !== null ? t.theta : '',
+            t.stopLoss || '', t.status,
+            '"' + thesis + '"',
+            '"' + notes + '"'
+        ].join(',') + '\n';
+    }
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'mystery_trades_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
 }
 
 function renderAnalytics() {
@@ -459,74 +710,9 @@ function renderAnalytics() {
         '<div class="stat-card"><div class="stat-label">Long Puts</div><div class="stat-value">' + puts + '</div></div>';
 }
 
-function viewDetails(id) {
-    var trade = null;
-    for (var i = 0; i < trades.length; i++) { if (trades[i].id === id) { trade = trades[i]; break; } }
-    if (!trade) return;
-    var pnl = calculatePnL(trade);
-    var msg = 'TRADE DETAILS\n\n' +
-        'Ticker: ' + trade.ticker + '\n' +
-        'Type: ' + (trade.optionType === 'call' ? 'Long Call' : 'Long Put') + '\n' +
-        'Strike: $' + trade.strike.toFixed(2) + '\n' +
-        'Expiration: ' + trade.expiry + '\n' +
-        'Contracts: ' + trade.contracts + '\n\n' +
-        'Stock Price (Entry): ' + (trade.stockPriceEntry ? '$' + trade.stockPriceEntry.toFixed(2) : 'N/A') + '\n' +
-        'Option Entry: $' + trade.entryPrice.toFixed(2) + ' on ' + trade.entryDate + '\n' +
-        'Option Exit: ' + (trade.exitPrice ? '$' + trade.exitPrice.toFixed(2) + ' on ' + trade.exitDate : 'N/A') + '\n' +
-        'Commissions: $' + trade.fees.toFixed(2) + '\n' +
-        'P&L: ' + (pnl !== null ? '$' + pnl.toFixed(2) : 'N/A') + '\n\n' +
-        'Delta: ' + (trade.delta !== null ? trade.delta : 'N/A') + '\n' +
-        'Theta: ' + (trade.theta !== null ? trade.theta : 'N/A') + '\n' +
-        'Stop Loss: ' + (trade.stopLoss ? '$' + trade.stopLoss.toFixed(2) : 'N/A') + '\n\n' +
-        'Status: ' + (trade.status === 'open' ? 'Open' : 'Closed') + '\n\n' +
-        'Thesis:\n' + (trade.thesis || 'N/A') + '\n\n' +
-        'Notes:\n' + (trade.notes || 'N/A');
-    alert(msg);
-}
-
-function deleteTrade(id) {
-    if (confirm('Are you sure you want to delete this trade?')) {
-        trades = trades.filter(function(t) { return t.id !== id; });
-        saveTrades();
-        renderTrades();
-        showToast('Trade deleted.');
-    }
-}
-
-function exportTrades() {
-    if (trades.length === 0) { showToast('No trades to export.'); return; }
-    var csv = 'Entry Date,Ticker,Type,Strike,Expiration,Contracts,Stock Price Entry,Option Entry,Option Exit,Exit Date,Commissions,PnL,Delta,Theta,Stop Loss,Status,Thesis,Notes\n';
-    for (var i = 0; i < trades.length; i++) {
-        var t = trades[i];
-        var pnl = calculatePnL(t);
-        var thesis = (t.thesis || '').replace(/"/g, '""');
-        var notes = (t.notes || '').replace(/"/g, '""');
-        csv += [
-            t.entryDate, t.ticker,
-            t.optionType === 'call' ? 'Long Call' : 'Long Put',
-            t.strike, t.expiry, t.contracts,
-            t.stockPriceEntry || '',
-            t.entryPrice, t.exitPrice || '',
-            t.exitDate || '', t.fees,
-            pnl !== null ? pnl.toFixed(2) : '',
-            t.delta !== null ? t.delta : '',
-            t.theta !== null ? t.theta : '',
-            t.stopLoss || '', t.status,
-            '"' + thesis + '"',
-            '"' + notes + '"'
-        ].join(',') + '\n';
-    }
-    var blob = new Blob([csv], { type: 'text/csv' });
-    var url = window.URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'mystery_trades_' + new Date().toISOString().split('T')[0] + '.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-}
-
 loadTrades();
 document.getElementById('entry-date').valueAsDate = new Date();
+updateDeltaPlaceholder();
 </script>
 </body>
 </html>
