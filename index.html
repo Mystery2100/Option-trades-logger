@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,29 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyStery Analytics</title>
     <style>
-        /* Tu CSS actual completo - el mismo que tienes funcionando */
         :root {
-            --color-cream-50: rgba(252,252,249,1);
-            --color-cream-100: rgba(255,255,253,1);
-            --color-gray-200: rgba(245,245,245,1);
-            --color-gray-300: rgba(167,169,169,1);
-            --color-gray-400: rgba(119,124,124,1);
-            --color-slate-500: rgba(98,108,113,1);
-            --color-brown-600: rgba(94,82,64,1);
-            --color-charcoal-700: rgba(31,33,33,1);
-            --color-charcoal-800: rgba(38,40,40,1);
-            --color-slate-900: rgba(19,52,59,1);
-            --color-teal-300: rgba(50,184,198,1);
-            --color-teal-400: rgba(45,166,178,1);
-            --color-teal-500: rgba(33,128,141,1);
-            --color-teal-600: rgba(29,116,128,1);
-            --color-teal-700: rgba(26,104,115,1);
-            --color-teal-800: rgba(41,150,161,1);
-            --color-red-400: rgba(255,84,89,1);
-            --color-red-500: rgba(192,21,47,1);
-            --color-orange-400: rgba(230,129,97,1);
-            --color-orange-500: rgba(168,75,47,1);
-            --color-purple: rgba(147,51,234,1);
+            --color-cream-50: #FCFCF9;
+            --color-cream-100: #FFFFFD;
+            --color-gray-200: #F5F5F5;
+            --color-gray-300: #A7A9A9;
+            --color-gray-400: #777C7C;
+            --color-slate-500: #626C71;
+            --color-brown-600: #5E5240;
+            --color-charcoal-700: #1F2121;
+            --color-charcoal-800: #262828;
+            --color-slate-900: #13343B;
+            --color-teal-300: #32B8C6;
+            --color-teal-400: #2DA6B2;
+            --color-teal-500: #21808D;
+            --color-teal-600: #1D747F;
+            --color-teal-700: #1A6872;
+            --color-teal-800: #2996A1;
+            --color-red-400: #FF5459;
+            --color-red-500: #C0152F;
+            --color-orange-400: #E68161;
+            --color-orange-500: #A84B2F;
+            --color-purple: #9333EA;
             --color-brown-600-rgb: 94,82,64;
             --color-teal-500-rgb: 33,128,141;
             --color-slate-900-rgb: 19,52,59;
@@ -148,21 +146,22 @@
         .stat-card { background: var(--color-surface); border: 1px solid var(--color-card-border); border-radius: var(--radius-lg); padding: var(--space-20); text-align: center; }
         .stat-label { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-bottom: var(--space-8); }
         .stat-value { font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-text); }
-        .action-buttons { display: flex; gap: var(--space-8); }
+        .action-buttons { display: flex; gap: var(--space-8); flex-wrap: wrap; }
         .empty-state { text-align: center; padding: var(--space-24); color: var(--color-text-secondary); }
         .filter-bar { display: flex; gap: var(--space-12); margin-bottom: var(--space-16); flex-wrap: wrap; }
         .filter-bar select { min-width: 140px; }
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2121; color: #fff; padding: 12px 24px; border-radius: var(--radius-lg); font-size: var(--font-size-sm); z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
         #import-input { display: none; }
+        .edit-indicator { font-size: var(--font-size-sm); color: var(--color-info); font-weight: var(--font-weight-medium); }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; } .stats-grid { grid-template-columns: 1fr 1fr; } .trades-table { font-size: var(--font-size-xs); } .trades-table th, .trades-table td { padding: var(--space-8); } }
-        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } .action-buttons { flex-direction: column; width: 100%; } }
     </style>
 </head>
 <body>
 <div class="container">
     <header>
-        <h1 class="header-title">Options Trade Logger &nbsp;<span>MyStery Analytics</span></h1>
+        <h1 class="header-title">Options Trade Logger <span>MyStery Analytics</span></h1>
         <p class="subtitle">Track and analyze your directional options trades</p>
     </header>
 
@@ -174,7 +173,7 @@
 
     <div id="new-trade" class="tab-content active">
         <div class="card">
-            <h2 style="margin-bottom:var(--space-20);font-size:var(--font-size-xl);">Log New Trade <span id="edit-indicator" style="font-size:var(--font-size-sm);color:var(--color-info);font-weight:var(--font-weight-medium)"></span></h2>
+            <h2 style="margin-bottom:var(--space-20);font-size:var(--font-size-xl);">Log New Trade <span class="edit-indicator" id="edit-indicator"></span></h2>
             <form id="tradeForm">
                 <p class="section-label">Trade Setup</p>
                 <div class="form-grid">
@@ -219,7 +218,7 @@
                         <input type="date" id="entry-date" required>
                     </div>
                     <div class="form-group">
-                        <label for="entry-price">Option Entry Price * <span class="label-hint">(per contract)</span></label>
+                        <label for="entry-price">Option Entry Price *</label>
                         <input type="number" id="entry-price" step="0.01" required placeholder="2.50">
                     </div>
                     <div class="form-group">
@@ -227,7 +226,7 @@
                         <input type="number" id="stock-price-entry" step="0.01" required placeholder="148.50">
                     </div>
                     <div class="form-group">
-                        <label for="fees">Commissions ($)</label>
+                        <label for="fees">Commissions</label>
                         <input type="number" id="fees" step="0.01" value="0" placeholder="0.65">
                     </div>
                 </div>
@@ -240,7 +239,7 @@
                         <input type="number" id="delta" step="0.01" placeholder="-0.45">
                     </div>
                     <div class="form-group">
-                        <label for="theta">Theta <span class="label-hint">(daily decay $)</span></label>
+                        <label for="theta">Theta <span class="label-hint">(daily decay)</span></label>
                         <input type="number" id="theta" step="0.001" placeholder="-0.05">
                     </div>
                 </div>
@@ -255,7 +254,7 @@
                 </div>
 
                 <hr class="section-divider">
-                <p class="section-label">Exit <span class="label-hint">(fill when closing the trade)</span></p>
+                <p class="section-label">Exit</p>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="exit-price">Option Exit Price</label>
@@ -291,9 +290,9 @@
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-20)">
                 <h2 style="font-size:var(--font-size-xl);">Trade History</h2>
                 <div style="display:flex;gap:var(--space-8)">
-                    <button class="btn btn-secondary btn-small" onclick="exportTrades()">Export CSV</button>
                     <input type="file" id="import-input" accept=".csv" style="display:none" onchange="importCSV(event)">
                     <button class="btn btn-secondary btn-small" onclick="document.getElementById('import-input').click()">Import CSV</button>
+                    <button class="btn btn-secondary btn-small" onclick="exportTrades()">Export CSV</button>
                 </div>
             </div>
             <div class="filter-bar">
@@ -330,7 +329,7 @@ function showToast(msg) {
     var t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(function() { t.classList.remove('show'); }, 2800);
+    setTimeout(function() { t.classList.remove('show'); }, 3000);
 }
 
 function loadTrades() {
@@ -357,14 +356,21 @@ function updateDeltaPlaceholder() {
 }
 
 function switchTab(tabName) {
-    var allTabs = document.querySelectorAll('.tab');
-    var allContents = document.querySelectorAll('.tab-content');
-    for (var i = 0; i < allTabs.length; i++) allTabs[i].classList.remove('active');
-    for (var i = 0; i < allContents.length; i++) allContents[i].classList.remove('active');
+    // Remove active from all tabs and contents
+    var tabs = document.querySelectorAll('.tab');
+    var contents = document.querySelectorAll('.tab-content');
+    for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+    for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
+
+    // Activate selected tab and content
     document.getElementById('tab-' + tabName).classList.add('active');
     document.getElementById(tabName).classList.add('active');
+
+    // Render content if needed
     if (tabName === 'trades') renderTrades();
     else if (tabName === 'analytics') renderAnalytics();
+
+    // Cancel editing if switching tabs
     if (editingId !== null) cancelEdit();
 }
 
@@ -378,6 +384,7 @@ function cancelEdit() {
 
 document.getElementById('tradeForm').addEventListener('submit', function(e) {
     e.preventDefault();
+
     var trade = {
         id: editingId || Date.now(),
         ticker: document.getElementById('ticker').value.toUpperCase(),
@@ -407,11 +414,11 @@ document.getElementById('tradeForm').addEventListener('submit', function(e) {
                 break;
             }
         }
-        showToast('Trade updated successfully!');
+        showToast('Trade updated!');
     } else {
         // Add new trade
         trades.push(trade);
-        showToast('Trade saved successfully!');
+        showToast('Trade saved!');
     }
 
     saveTrades();
@@ -425,76 +432,76 @@ function calculatePnL(trade) {
     return profit - trade.fees;
 }
 
-function getFilteredTrades() {
-    var sf = document.getElementById('filter-status').value;
-    var tf = document.getElementById('filter-type').value;
-    return trades.filter(function(t) {
-        if (sf !== 'all' && t.status !== sf) return false;
-        if (tf !== 'all' && t.optionType !== tf) return false;
-        return true;
-    });
-}
-
-function filterTrades() { renderTrades(); }
-
 function renderTrades() {
     var container = document.getElementById('trades-list');
     if (trades.length === 0) {
         container.innerHTML = '<div class="empty-state">No trades logged yet. Start by logging your first trade!</div>';
         return;
     }
-    var filtered = getFilteredTrades();
-    if (filtered.length === 0) {
+    var filteredTrades = getFilteredTrades();
+    if (filteredTrades.length === 0) {
         container.innerHTML = '<div class="empty-state">No trades match the selected filters.</div>';
         return;
     }
-    var rows = '';
-    for (var i = 0; i < filtered.length; i++) {
-        var tr = filtered[i];
-        var pnl = calculatePnL(tr);
-        var pnlClass = pnl !== null ? (pnl > 0 ? 'profit' : (pnl < 0 ? 'loss' : '')) : '';
-        var pnlText = pnl !== null ? '$' + pnl.toFixed(2) : '-';
-        rows += '<tr>' +
-            '<td>' + tr.entryDate + '</td>' +
-            '<td><strong>' + tr.ticker + '</strong></td>' +
-            '<td><span class="badge badge-' + tr.optionType + '">' + (tr.optionType === 'call' ? 'CALL' : 'PUT') + '</span></td>' +
-            '<td>$' + tr.strike.toFixed(2) + '</td>' +
-            '<td>' + tr.expiry + '</td>' +
-            '<td>' + tr.contracts + '</td>' +
-            '<td>' + (tr.stockPriceEntry ? '$' + tr.stockPriceEntry.toFixed(2) : '-') + '</td>' +
-            '<td>$' + tr.entryPrice.toFixed(2) + '</td>' +
-            '<td>' + (tr.exitPrice ? '$' + tr.exitPrice.toFixed(2) : '-') + '</td>' +
-            '<td>' + (tr.delta !== null ? tr.delta : '-') + '</td>' +
-            '<td>' + (tr.theta !== null ? tr.theta : '-') + '</td>' +
-            '<td>' + (tr.stopLoss ? '$' + tr.stopLoss.toFixed(2) : '-') + '</td>' +
-            '<td class="' + pnlClass + '">' + pnlText + '</td>' +
-            '<td><span class="badge badge-' + tr.status + '">' + (tr.status === 'open' ? 'Open' : 'Closed') + '</span></td>' +
-            '<td><div class="action-buttons">' +
-                '<button class="btn btn-secondary btn-small" onclick="editTrade(' + tr.id + ')">Edit</button>' +
-                '<button class="btn btn-secondary btn-small" onclick="viewDetails(' + tr.id + ')">View</button>' +
-                '<button class="btn btn-secondary btn-small" onclick="deleteTrade(' + tr.id + ')">Delete</button>' +
-            '</div></td>' +
-        '</tr>';
-    }
-    container.innerHTML = '<table class="trades-table"><thead><tr>' +
+
+    var html = '<table class="trades-table"><thead><tr>' +
         '<th>Date</th><th>Ticker</th><th>Type</th><th>Strike</th><th>Exp.</th>' +
         '<th>Qty</th><th>Stock $</th><th>Entry</th><th>Exit</th>' +
         '<th>Delta</th><th>Theta</th><th>Stop</th><th>P&L</th><th>Status</th><th>Actions</th>' +
-        '</tr></thead><tbody>' + rows + '</tbody></table>';
+        '</tr></thead><tbody>';
+
+    for (var i = 0; i < filteredTrades.length; i++) {
+        var trade = filteredTrades[i];
+        var pnl = calculatePnL(trade);
+        var pnlClass = pnl !== null ? (pnl > 0 ? 'profit' : 'loss') : '';
+        var pnlText = pnl !== null ? '$' + pnl.toFixed(2) : '-';
+
+        html += '<tr>' +
+            '<td>' + trade.entryDate + '</td>' +
+            '<td><strong>' + trade.ticker + '</strong></td>' +
+            '<td><span class="badge badge-' + trade.optionType + '">' + (trade.optionType === 'call' ? 'CALL' : 'PUT') + '</span></td>' +
+            '<td>$' + trade.strike.toFixed(2) + '</td>' +
+            '<td>' + trade.expiry + '</td>' +
+            '<td>' + trade.contracts + '</td>' +
+            '<td>' + (trade.stockPriceEntry ? '$' + trade.stockPriceEntry.toFixed(2) : '-') + '</td>' +
+            '<td>$' + trade.entryPrice.toFixed(2) + '</td>' +
+            '<td>' + (trade.exitPrice ? '$' + trade.exitPrice.toFixed(2) : '-') + '</td>' +
+            '<td>' + (trade.delta !== null ? trade.delta : '-') + '</td>' +
+            '<td>' + (trade.theta !== null ? trade.theta : '-') + '</td>' +
+            '<td>' + (trade.stopLoss ? '$' + trade.stopLoss.toFixed(2) : '-') + '</td>' +
+            '<td class="' + pnlClass + '">' + pnlText + '</td>' +
+            '<td><span class="badge badge-' + trade.status + '">' + (trade.status === 'open' ? 'Open' : 'Closed') + '</span></td>' +
+            '<td><div class="action-buttons">' +
+                '<button class="btn btn-secondary btn-small" onclick="editTrade(' + trade.id + ')">Edit</button>' +
+                '<button class="btn btn-secondary btn-small" onclick="viewDetails(' + trade.id + ')">View</button>' +
+                '<button class="btn btn-secondary btn-small" onclick="deleteTrade(' + trade.id + ')">Delete</button>' +
+            '</div></td>' +
+        '</tr>';
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function getFilteredTrades() {
+    var statusFilter = document.getElementById('filter-status').value;
+    var typeFilter = document.getElementById('filter-type').value;
+    return trades.filter(function(trade) {
+        if (statusFilter !== 'all' && trade.status !== statusFilter) return false;
+        if (typeFilter !== 'all' && trade.optionType !== typeFilter) return false;
+        return true;
+    });
+}
+
+function filterTrades() {
+    renderTrades();
 }
 
 function editTrade(id) {
-    var trade = null;
-    for (var i = 0; i < trades.length; i++) {
-        if (trades[i].id === id) {
-            trade = trades[i];
-            break;
-        }
-    }
+    var trade = trades.find(function(t) { return t.id === id; });
     if (!trade) return;
 
     editingId = id;
-    document.getElementById('edit-indicator').textContent = '(Editing Trade ID: ' + id + ')';
+    document.getElementById('edit-indicator').textContent = '(Editing ID: ' + id + ')';
     document.getElementById('save-btn').textContent = 'Update Trade';
 
     document.getElementById('ticker').value = trade.ticker;
@@ -506,7 +513,7 @@ function editTrade(id) {
     document.getElementById('entry-date').value = trade.entryDate;
     document.getElementById('entry-price').value = trade.entryPrice;
     document.getElementById('stock-price-entry').value = trade.stockPriceEntry || '';
-    document.getElementById('fees').value = trade.fees || 0;
+    document.getElementById('fees').value = trade.fees;
     document.getElementById('delta').value = trade.delta !== null ? trade.delta : '';
     document.getElementById('theta').value = trade.theta !== null ? trade.theta : '';
     document.getElementById('stop-loss').value = trade.stopLoss !== null ? trade.stopLoss : '';
@@ -520,33 +527,10 @@ function editTrade(id) {
 }
 
 function viewDetails(id) {
-    var trade = null;
-    for (var i = 0; i < trades.length; i++) {
-        if (trades[i].id === id) {
-            trade = trades[i];
-            break;
-        }
-    }
+    var trade = trades.find(function(t) { return t.id === id; });
     if (!trade) return;
     var pnl = calculatePnL(trade);
-    var msg = 'TRADE DETAILS\n\n' +
-        'Ticker: ' + trade.ticker + '\n' +
-        'Type: ' + (trade.optionType === 'call' ? 'Long Call' : 'Long Put') + '\n' +
-        'ID: ' + trade.id + '\n' +
-        'Strike: $' + trade.strike.toFixed(2) + '\n' +
-        'Expiration: ' + trade.expiry + '\n' +
-        'Contracts: ' + trade.contracts + '\n\n' +
-        'Stock Price (Entry): ' + (trade.stockPriceEntry ? '$' + trade.stockPriceEntry.toFixed(2) : 'N/A') + '\n' +
-        'Option Entry: $' + trade.entryPrice.toFixed(2) + ' on ' + trade.entryDate + '\n' +
-        'Option Exit: ' + (trade.exitPrice ? '$' + trade.exitPrice.toFixed(2) + ' on ' + trade.exitDate : 'N/A') + '\n' +
-        'Commissions: $' + trade.fees.toFixed(2) + '\n' +
-        'P&L: ' + (pnl !== null ? '$' + pnl.toFixed(2) : 'N/A') + '\n\n' +
-        'Delta: ' + (trade.delta !== null ? trade.delta : 'N/A') + '\n' +
-        'Theta: ' + (trade.theta !== null ? trade.theta : 'N/A') + '\n' +
-        'Stop Loss: ' + (trade.stopLoss ? '$' + trade.stopLoss.toFixed(2) : 'N/A') + '\n\n' +
-        'Status: ' + (trade.status === 'open' ? 'Open' : 'Closed') + '\n\n' +
-        'Thesis:\n' + (trade.thesis || 'N/A') + '\n\n' +
-        'Notes:\n' + (trade.notes || 'N/A');
+    var msg = 'TRADE DETAILS\n\nTicker: ' + trade.ticker + '\nType: ' + (trade.optionType === 'call' ? 'Long Call' : 'Long Put') + '\nID: ' + trade.id + '\nStrike: $' + trade.strike.toFixed(2) + '\nExpiration: ' + trade.expiry + '\nContracts: ' + trade.contracts + '\n\nStock Price Entry: ' + (trade.stockPriceEntry ? '$' + trade.stockPriceEntry.toFixed(2) : 'N/A') + '\nOption Entry: $' + trade.entryPrice.toFixed(2) + ' (' + trade.entryDate + ')\nOption Exit: ' + (trade.exitPrice ? '$' + trade.exitPrice.toFixed(2) + ' (' + trade.exitDate + ')' : 'N/A') + '\nCommissions: $' + trade.fees.toFixed(2) + '\nP&L: ' + (pnl !== null ? '$' + pnl.toFixed(2) : 'N/A') + '\n\nDelta: ' + (trade.delta !== null ? trade.delta : 'N/A') + '\nTheta: ' + (trade.theta !== null ? trade.theta : 'N/A') + '\nStop Loss: ' + (trade.stopLoss ? '$' + trade.stopLoss.toFixed(2) : 'N/A') + '\n\nStatus: ' + (trade.status === 'open' ? 'Open' : 'Closed') + '\n\nThesis: ' + (trade.thesis || 'N/A') + '\n\nNotes: ' + (trade.notes || 'N/A');
     alert(msg);
 }
 
@@ -567,60 +551,48 @@ function importCSV(event) {
     reader.onload = function(e) {
         var csv = e.target.result;
         var lines = csv.split('\n');
-        var header = lines[0].trim().split(',');
+        if (lines.length < 2) { showToast('Invalid CSV file'); return; }
+
+        var header = lines[0].split(',');
         var importedTrades = [];
+        var errors = 0;
 
         for (var i = 1; i < lines.length; i++) {
             var line = lines[i].trim();
             if (!line) continue;
 
-            var row = [];
-            var inQuotes = false;
-            var field = '';
-            for (var j = 0; j < line.length; j++) {
-                var char = line[j];
-                if (char === '"' && (j === 0 || line[j-1] !== '""')) {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    row.push(field.trim());
-                    field = '';
-                } else {
-                    field += char;
-                }
-            }
-            row.push(field.trim());
-
-            if (row.length < header.length) continue;
+            // Simple CSV parser
+            var row = line.split(',');
+            if (row.length < 18) { errors++; continue; }
 
             var trade = {
-                id: Date.now() + i,  # ID temporal si no hay en CSV
-                ticker: row[1] || '',
-                optionType: row[2].toLowerCase().includes('call') ? 'call' : 'put',
+                id: parseInt(row[0]) || Date.now() + i,
+                ticker: row[1].trim().toUpperCase(),
+                optionType: row[2].trim().toLowerCase().includes('call') ? 'call' : 'put',
                 strike: parseFloat(row[3]) || 0,
-                expiry: row[4] || '',
+                expiry: row[4].trim(),
                 contracts: parseInt(row[5]) || 1,
                 stockPriceEntry: parseFloat(row[6]) || null,
                 entryPrice: parseFloat(row[7]) || 0,
                 exitPrice: parseFloat(row[8]) || null,
-                exitDate: row[9] || null,
+                exitDate: row[9].trim(),
                 fees: parseFloat(row[10]) || 0,
                 delta: parseFloat(row[12]) || null,
                 theta: parseFloat(row[13]) || null,
                 stopLoss: parseFloat(row[14]) || null,
-                status: row[15] || 'open',
-                thesis: row[16] || '',
-                notes: row[17] || ''
+                status: row[15].trim() || 'open',
+                thesis: row[16].trim(),
+                notes: row[17].trim()
             };
 
             importedTrades.push(trade);
         }
 
-        # Merge logic: update existing, add new
+        // Merge: update existing, add new
         for (var k = 0; k < importedTrades.length; k++) {
             var found = false;
             for (var m = 0; m < trades.length; m++) {
-                if (trades[m].ticker === importedTrades[k].ticker && 
-                    trades[m].entryDate === importedTrades[k].entryDate) {
+                if (trades[m].id === importedTrades[k].id) {
                     trades[m] = importedTrades[k];
                     found = true;
                     break;
@@ -634,21 +606,20 @@ function importCSV(event) {
         saveTrades();
         renderTrades();
         event.target.value = '';
-        showToast('Imported ' + importedTrades.length + ' trades (merged with existing)');
+        showToast('Imported ' + importedTrades.length + ' trades (merged)');
     };
     reader.readAsText(file);
 }
 
 function exportTrades() {
     if (trades.length === 0) { showToast('No trades to export.'); return; }
-    var csv = 'ID,Entry Date,Ticker,Type,Strike,Expiration,Contracts,Stock Price Entry,Option Entry,Option Exit,Exit Date,Commissions,PnL,Delta,Theta,Stop Loss,Status,Thesis,Notes\n';
+    var csv = 'ID,Entry Date,Ticker,Type,Strike,Expiration,Contracts,Stock Price Entry,Option Entry,Option Exit,Exit Date,Commissions,PnL,Delta,Theta,Stop Loss,Status,"Thesis","Notes"\n';
     for (var i = 0; i < trades.length; i++) {
         var t = trades[i];
         var pnl = calculatePnL(t);
         var thesis = (t.thesis || '').replace(/"/g, '""');
         var notes = (t.notes || '').replace(/"/g, '""');
-        csv += [
-            t.id,
+        csv += t.id + ',' + [
             t.entryDate, t.ticker,
             t.optionType === 'call' ? 'Long Call' : 'Long Put',
             t.strike, t.expiry, t.contracts,
@@ -696,13 +667,14 @@ function renderAnalytics() {
     var avgLoss = losers > 0 ? (totalLoss / losers).toFixed(2) : '0.00';
     var pf = totalLoss > 0 ? (totalWin / totalLoss).toFixed(2) : '-';
     var pnlClass = totalPnL > 0 ? 'profit' : (totalPnL < 0 ? 'loss' : '');
-    container.innerHTML =
+
+    container.innerHTML = 
         '<div class="stat-card"><div class="stat-label">Total Trades</div><div class="stat-value">' + trades.length + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Open Positions</div><div class="stat-value">' + open + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Closed Trades</div><div class="stat-value">' + closed.length + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Total P&L</div><div class="stat-value ' + pnlClass + '">$' + totalPnL.toFixed(2) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Open</div><div class="stat-value">' + open + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Closed</div><div class="stat-value">' + closed.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">P&L</div><div class="stat-value ' + pnlClass + '">$' + totalPnL.toFixed(2) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value">' + winRate + '%</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Winners / Losers</div><div class="stat-value">' + winners + ' / ' + losers + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">W/L</div><div class="stat-value">' + winners + '/' + losers + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Avg Win</div><div class="stat-value profit">$' + avgWin + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Avg Loss</div><div class="stat-value loss">$' + avgLoss + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Profit Factor</div><div class="stat-value">' + pf + '</div></div>' +
@@ -710,6 +682,7 @@ function renderAnalytics() {
         '<div class="stat-card"><div class="stat-label">Long Puts</div><div class="stat-value">' + puts + '</div></div>';
 }
 
+// Initialize
 loadTrades();
 document.getElementById('entry-date').valueAsDate = new Date();
 updateDeltaPlaceholder();
